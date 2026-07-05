@@ -230,7 +230,7 @@ import hashlib
 import logging
 from typing import Dict, Any
 
-# Logging-Konfiguration für Enterprise-Infrastrukturen
+# Logging-Konfiguration for Enterprise-Infrastruktures
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger("StudioPUPSI_AI_Security")
 
@@ -281,7 +281,6 @@ class SecureAIPipelineValidator:
         logger.info("AI Pipeline cleared for secure execution. Access Granted.")
         return True
 
-# Beispiel für die Integration in dein Readme/Codebase
 if __name__ == "__main__":
     validator = SecureAIPipelineValidator()
     
