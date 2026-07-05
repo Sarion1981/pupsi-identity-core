@@ -117,16 +117,18 @@ sequenceDiagram
     
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
     
-RUST
+### 💻 Code Implementation Snippets
 
-    // file: src/security/verifier.rs
+#### 1. Deterministic Validator (Rust)
+```rust
+// file: src/security/verifier.rs
 use ed25519_dalek::{Verifier, VerifyingKey, Signature};
 
 pub struct DeterministicValidator;
 
 impl DeterministicValidator {
-    /// Validiert die Client-Identität absolut binär.
-    /// Schließt heuristische Grauzonen oder KI-Fehlinterpretationen mathematisch aus.
+    /// Validates client identity with absolute binary certainty.
+    /// Mathematically eliminates heuristic gray areas and AI false positives.
     pub fn verify_instance_truth(
         pubkey_bytes: &[u8; 32],
         nonce: &[u8],
@@ -137,20 +139,17 @@ impl DeterministicValidator {
             
         let signature = Signature::from_bytes(signature_bytes);
 
-        // Harte, binäre Wahrheit: Übereinstimmung oder sofortiger Abbruch
+        // Hard binary truth: Cryptographic match or immediate termination
         match public_key.verify(nonce, &signature) {
             Ok(_) => Ok(()),
             Err(_) => Err("SECURITY_ALERT: Unauthorized instance modification detected. Access denied.")
         }
     }
 }
+```
 
-
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-GO
-
+#### 2. Hardware Identity Anchor (Go)
+```go
 // file: pkg/hardware/identity.go
 package hardware
 
@@ -160,52 +159,49 @@ import (
 	"fmt"
 )
 
-// GenerateSoftwareID extrahiert Telemetrie aus dem TPM/Mainboard und bindet die Identität.
+// GenerateSoftwareID extracts hardware telemetry and binds the immutable software identity.
 func GenerateSoftwareID(tpmStorageKey []byte, hardwareUUID string) (string, error) {
 	if len(tpmStorageKey) == 0 || hardwareUUID == "" {
 		return "", fmt.Errorf("HARDWARE_ERR: Identity binding requirements missing")
 	}
 
-	// Kombination aus kryptografischer Hardware-Versiegelung und physischer UUID
+	// Combine cryptographic hardware seeding with physical device UUID
 	hasher := sha256.New()
 	hasher.Write(tpmStorageKey)
 	hasher.Write([]byte(hardwareUUID))
 	
-	// Generierung der deterministischen Software-ID
+	// Generate the deterministic, tamper-proof Software-ID
 	stableSoftwareID := hex.EncodeToString(hasher.Sum(nil))
 	return stableSoftwareID, nil
 }
+```
 
-
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-JAVASCRIPT
-
+#### 3. Stateless Attestation Engine (Node.js)
+```javascript
 // file: src/api/attestationHandler.js
 const crypto = require('crypto');
 
 class AttestationEngine {
     /**
-     * Erstellt eine kryptografisch sichere, zeitlich begrenzte Challenge (Anti-Replay).
+     * Generates a cryptographically secure, time-sensitive challenge (Anti-Replay).
      */
     generateChallenge() {
         return crypto.randomBytes(32).toString('hex');
     }
 
     /**
-     * Prüft die vom Client zurückgegebene Challenge und die Integrität der Binärdatei.
+     * Verifies the client's challenge response and enforces strict binary integrity.
      */
     verifyAttestationReport(clientReport, serverNonce, expectedBinaryHash) {
-        // 1. Verifiziere, dass der übermittelte SHA-256 Hash der Binärdatei exakt übereinstimmt
+        // 1. Enforce strict binary code integrity via cryptographic hash matching
         if (clientReport.binaryHash !== expectedBinaryHash) {
             return { authenticated: false, reason: "INTEGRITY_VIOLATION: Binary hash mismatch (tampered client)" };
         }
 
-        // 2. Mathematischer Abgleich des Handshakes (Anonymisierter Challenge-Response Check)
+        // 2. Stateless challenge-response validation using asymmetric cryptography
         const isSignatureValid = crypto.verify(
             null,
-            Buffer.from(serverNonce),
+            Buffer.from(serverNonce, 'hex'),
             Buffer.from(clientReport.publicKey, 'hex'),
             Buffer.from(clientReport.signature, 'hex')
         );
@@ -219,39 +215,32 @@ class AttestationEngine {
 }
 
 module.exports = AttestationEngine;
+```
 
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-PYTHON § Pipleines
-
-// # file: ai-pipeline/src/security/pipeline_validator.py
-
+#### 4. Secure AI Pipeline Validator (Python)
+```python
+# file: ai-pipeline/src/security/pipeline_validator.py
 import hashlib
-
 import logging
-
 from typing import Dict, Any
 
-
-// # Logging-Konfiguration for Enterprise-Infrastruktures
-
+# Enterprise infrastructure logging configuration
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger("StudioPUPSI_AI_Security")
 
 class SecureAIPipelineValidator:
     """
-    Deterministischer Validator für KI-Pipelines.
-    Garantiert die Integrität von Modellen und Datensätzen vor der Ausführung.
+    Deterministic validator for AI pipelines.
+    Guarantees the integrity of models and datasets prior to runtime execution.
     """
     
     @staticmethod
     def calculate_artifact_hash(file_path: str) -> str:
-        """Berechnet den SHA-256 Hash eines KI-Artefakts (z.B. .safetensors oder .pt Datei)."""
+        """Calculates the SHA-256 hash of an AI artifact (e.g., .safetensors or .pt model files)."""
         sha256_hash = hashlib.sha256()
         try:
             with open(file_path, "rb") as f:
-                # Blockweises Einlesen für minimale RAM-Auslastung (Lean Execution)
+                # Stream blocks to enforce minimal RAM footprint (Lean Execution)
                 for byte_block in iter(lambda: f.read(4096), b""):
                     sha256_hash.update(byte_block)
             return sha256_hash.hexdigest()
@@ -259,10 +248,7 @@ class SecureAIPipelineValidator:
             raise FileNotFoundError(f"PIPELINE_ERR: Artifact not found at {file_path}")
 
     def verify_pipeline_integrity(self, manifest: Dict[str, Any], expected_hashes: Dict[str, str]) -> bool:
-        """
-        Validiert die gesamte KI-Infrastruktur binär.
-        Schließt Manipulationen (Supply-Chain-Angriffe) an Modellen mathematisch aus.
-        """
+        """Validates the entire AI infrastructure binary to eliminate supply-chain tampering."""
         logger.info("Initializing deterministic AI pipeline integrity scan...")
         
         for artifact_name, file_path in manifest.items():
@@ -285,126 +271,8 @@ class SecureAIPipelineValidator:
                 
         logger.info("AI Pipeline cleared for secure execution. Access Granted.")
         return True
+```
 
-if __name__ == "__main__":
-    validator = SecureAIPipelineValidator()
-    
-    # Anonymisierte Pipeline-Konfiguration
-    pipeline_manifest = {
-        "llm_weights": "/opt/ai/models/llm_backbone.safetensors",
-        "training_set": "/opt/ai/data/secure_dataset.parquet"
-    }
-    
-    # Erwartete, kryptografisch versiegelte Hashes (z.B. aus Git-Commit oder KMS)
-    trusted_hashes = {
-        "llm_weights": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-        "training_set": "8f434346648f6b96df89dda901c5176b10a6d83961dd3c1ac88b59b2e49339e1"
-    }
-    
-    # Der binäre Check vor dem Modell-Start
-    pipeline_safe = validator.verify_pipeline_integrity(pipeline_manifest, trusted_hashes)
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-TERRAFORM
-
-
-	
-// # file: terraform/main.tf
-
-terraform {
-  required_version = ">= 1.5.0"
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "~> 5.0"
-    }
-  }
-}
-
-provider "aws" {
-  region = "eu-west-1" # Region mit hohem Compliance-Standard
-}
-
-// # 1. Sicherer, verschlüsselter Speicher für KI-Artefakte / Pipeline-Daten
-resource "aws_s3_bucket" "ai_artifact_storage" {
-  bucket        = "studio-pupsi-secure-ai-artifacts"
-  force_destroy = false
-
-  tags = {
-    Environment = "Production"
-    ManagedBy   = "Terraform"
-    Security    = "Zero-Trust-Compliance"
-  }
-}
-
-// # Erzwingt die serverseitige Verschlüsselung (KMS) für alle Daten
-resource "aws_s3_bucket_server_side_encryption_configuration" "crypto_enforcement" {
-  bucket = aws_s3_bucket.ai_artifact_storage.id
-
-  rule {
-    apply_server_side_encryption_by_default {
-      sse_algorithm = "aws:kms"
-    }
-  }
-}
-
-// # Blockiert jeglichen öffentlichen Zugriff (Anti-Data-Leak)
-resource "aws_s3_bucket_public_access_block" "private_by_default" {
-  bucket = aws_s3_bucket.ai_artifact_storage.id
-
-  block_public_acls       = true
-  block_public_policy     = true
-  ignore_public_acls      = true
-  restrict_public_buckets = true
-}
-
-// # 2. Striktes IAM-Rollenprofil (Principle of Least Privilege) für den Auth-Daemon
-resource "aws_iam_role" "pipeline_execution_role" {
-  name = "StudioPUPSI-Pipeline-Execution-Role"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Action = "sts:AssumeRole"
-        Effect = "Allow"
-        Principal = {
-          Service = "://amazonaws.com" # Oder EKS / ECS je nach Laufzeitumgebung
-        }
-      }
-    ]
-  })
-}
-
-// # Maßgeschneiderte IAM-Policy: Nur Lese- und Schreibrechte, kein Löschen erlaubt
-resource "aws_iam_policy" "storage_access_policy" {
-  name        = "StudioPUPSI-Storage-Access-Policy"
-  description = "Allows secure, deterministic read/write access to AI artifacts without deletion privileges."
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Action = [
-          "s3:GetObject",
-          "s3:PutObject",
-          "s3:ListBucket"
-        ]
-        Resource = [
-          aws_s3_bucket.ai_artifact_storage.arn,
-          "${aws_s3_bucket.ai_artifact_storage.arn}/*"
-        ]
-      }
-    ]
-  })
-}
-
-resource "aws_iam_role_policy_attachment" "attach_security_policy" {
-  role       = aws_iam_role.pipeline_execution_role.name
-  policy_arn = aws_iam_policy.storage_access_policy.arn
-}
 
 
 
