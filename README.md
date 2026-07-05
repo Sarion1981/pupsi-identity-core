@@ -1,4 +1,11 @@
-# 🛡️ Project PUPSI: Hardware-Bound Software Identity & Integrity
+# ⚡ Studio PUPSI: Next-Gen Platform Engineering & Cloud-Native Security
+
+### **Automated Infrastructures | DevSecOps (IaC) | Deterministic AI-Pipeline Security**
+
+
+
+################################################################################################################
+
 
 ### **🛠️ Tech Stack & Ecosystem**
 
