@@ -2,6 +2,13 @@
 
 ### **Automated Infrastructures | DevSecOps (IaC) | Deterministic AI-Pipeline Security**
 
+---
+
+### **Executive Summary**
+This ecosystem, engineered by **Studio PUPSI**, delivers high-performance platform architectures and decentralized security modules. By replacing vulnerable behavioral heuristics with a **Hardware Root of Trust (TPM 2.0)**, we enforce immutable software identity and automated compliance across cloud-native environments and AI development pipelines.
+
+It is designed for mission-critical enterprise infrastructures, secure edge computing, and high-stakes cloud environments where automated integrity verification is non-negotiable.
+
 
 
 ##########################################################################################################
@@ -213,5 +220,84 @@ class AttestationEngine {
 
 module.exports = AttestationEngine;
 
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+PYTHON § Pipleines
+
+# file: ai-pipeline/src/security/pipeline_validator.py
+import hashlib
+import logging
+from typing import Dict, Any
+
+# Logging-Konfiguration für Enterprise-Infrastrukturen
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+logger = logging.getLogger("StudioPUPSI_AI_Security")
+
+class SecureAIPipelineValidator:
+    """
+    Deterministischer Validator für KI-Pipelines.
+    Garantiert die Integrität von Modellen und Datensätzen vor der Ausführung.
+    """
+    
+    @staticmethod
+    def calculate_artifact_hash(file_path: str) -> str:
+        """Berechnet den SHA-256 Hash eines KI-Artefakts (z.B. .safetensors oder .pt Datei)."""
+        sha256_hash = hashlib.sha256()
+        try:
+            with open(file_path, "rb") as f:
+                # Blockweises Einlesen für minimale RAM-Auslastung (Lean Execution)
+                for byte_block in iter(lambda: f.read(4096), b""):
+                    sha256_hash.update(byte_block)
+            return sha256_hash.hexdigest()
+        except FileNotFoundError:
+            raise FileNotFoundError(f"PIPELINE_ERR: Artifact not found at {file_path}")
+
+    def verify_pipeline_integrity(self, manifest: Dict[str, Any], expected_hashes: Dict[str, str]) -> bool:
+        """
+        Validiert die gesamte KI-Infrastruktur binär.
+        Schließt Manipulationen (Supply-Chain-Angriffe) an Modellen mathematisch aus.
+        """
+        logger.info("Initializing deterministic AI pipeline integrity scan...")
+        
+        for artifact_name, file_path in manifest.items():
+            try:
+                actual_hash = self.calculate_artifact_hash(file_path)
+                expected_hash = expected_hashes.get(artifact_name)
+                
+                if actual_hash != expected_hash:
+                    logger.critical(
+                        f"SECURITY_ALERT: Integrity violation in '{artifact_name}'! "
+                        f"Expected: {expected_hash}, Got: {actual_hash}"
+                    )
+                    return False
+                    
+                logger.info(f"Binary Truth Confirmed: '{artifact_name}' is valid and untampered.")
+                
+            except Exception as e:
+                logger.error(f"PIPELINE_ERR: Validation failed for {artifact_name} - {str(e)}")
+                return False
+                
+        logger.info("AI Pipeline cleared for secure execution. Access Granted.")
+        return True
+
+# Beispiel für die Integration in dein Readme/Codebase
+if __name__ == "__main__":
+    validator = SecureAIPipelineValidator()
+    
+    # Anonymisierte Pipeline-Konfiguration
+    pipeline_manifest = {
+        "llm_weights": "/opt/ai/models/llm_backbone.safetensors",
+        "training_set": "/opt/ai/data/secure_dataset.parquet"
+    }
+    
+    # Erwartete, kryptografisch versiegelte Hashes (z.B. aus Git-Commit oder KMS)
+    trusted_hashes = {
+        "llm_weights": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "training_set": "8f434346648f6b96df89dda901c5176b10a6d83961dd3c1ac88b59b2e49339e1"
+    }
+    
+    # Der binäre Check vor dem Modell-Start
+    pipeline_safe = validator.verify_pipeline_integrity(pipeline_manifest, trusted_hashes)
 
 
