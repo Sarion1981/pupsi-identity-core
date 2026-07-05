@@ -225,7 +225,7 @@ module.exports = AttestationEngine;
 
 PYTHON § Pipleines
 
-# file: ai-pipeline/src/security/pipeline_validator.py
+// # file: ai-pipeline/src/security/pipeline_validator.py
 import hashlib
 import logging
 from typing import Dict, Any
