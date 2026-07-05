@@ -300,4 +300,105 @@ if __name__ == "__main__":
     # Der binäre Check vor dem Modell-Start
     pipeline_safe = validator.verify_pipeline_integrity(pipeline_manifest, trusted_hashes)
 
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+TERRAFORM
+
+	
+	# file: terraform/main.tf
+
+terraform {
+  required_version = ">= 1.5.0"
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
+  }
+}
+
+provider "aws" {
+  region = "eu-west-1" # Region mit hohem Compliance-Standard
+}
+
+# 1. Sicherer, verschlüsselter Speicher für KI-Artefakte / Pipeline-Daten
+resource "aws_s3_bucket" "ai_artifact_storage" {
+  bucket        = "studio-pupsi-secure-ai-artifacts"
+  force_destroy = false
+
+  tags = {
+    Environment = "Production"
+    ManagedBy   = "Terraform"
+    Security    = "Zero-Trust-Compliance"
+  }
+}
+
+# Erzwingt die serverseitige Verschlüsselung (KMS) für alle Daten
+resource "aws_s3_bucket_server_side_encryption_configuration" "crypto_enforcement" {
+  bucket = aws_s3_bucket.ai_artifact_storage.id
+
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm = "aws:kms"
+    }
+  }
+}
+
+# Blockiert jeglichen öffentlichen Zugriff (Anti-Data-Leak)
+resource "aws_s3_bucket_public_access_block" "private_by_default" {
+  bucket = aws_s3_bucket.ai_artifact_storage.id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+# 2. Striktes IAM-Rollenprofil (Principle of Least Privilege) für den Auth-Daemon
+resource "aws_iam_role" "pipeline_execution_role" {
+  name = "StudioPUPSI-Pipeline-Execution-Role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "://amazonaws.com" # Oder EKS / ECS je nach Laufzeitumgebung
+        }
+      }
+    ]
+  })
+}
+
+# Maßgeschneiderte IAM-Policy: Nur Lese- und Schreibrechte, kein Löschen erlaubt
+resource "aws_iam_policy" "storage_access_policy" {
+  name        = "StudioPUPSI-Storage-Access-Policy"
+  description = "Allows secure, deterministic read/write access to AI artifacts without deletion privileges."
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:ListBucket"
+        ]
+        Resource = [
+          aws_s3_bucket.ai_artifact_storage.arn,
+          "${aws_s3_bucket.ai_artifact_storage.arn}/*"
+        ]
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "attach_security_policy" {
+  role       = aws_iam_role.pipeline_execution_role.name
+  policy_arn = aws_iam_policy.storage_access_policy.arn
+}
+
+
 
