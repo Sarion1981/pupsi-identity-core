@@ -226,11 +226,16 @@ module.exports = AttestationEngine;
 PYTHON § Pipleines
 
 // # file: ai-pipeline/src/security/pipeline_validator.py
+
 import hashlib
+
 import logging
+
 from typing import Dict, Any
 
-# Logging-Konfiguration for Enterprise-Infrastruktures
+
+// # Logging-Konfiguration for Enterprise-Infrastruktures
+
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger("StudioPUPSI_AI_Security")
 
@@ -300,10 +305,12 @@ if __name__ == "__main__":
     pipeline_safe = validator.verify_pipeline_integrity(pipeline_manifest, trusted_hashes)
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 TERRAFORM
 
+
 	
-	# file: terraform/main.tf
+// # file: terraform/main.tf
 
 terraform {
   required_version = ">= 1.5.0"
@@ -319,7 +326,7 @@ provider "aws" {
   region = "eu-west-1" # Region mit hohem Compliance-Standard
 }
 
-# 1. Sicherer, verschlüsselter Speicher für KI-Artefakte / Pipeline-Daten
+// # 1. Sicherer, verschlüsselter Speicher für KI-Artefakte / Pipeline-Daten
 resource "aws_s3_bucket" "ai_artifact_storage" {
   bucket        = "studio-pupsi-secure-ai-artifacts"
   force_destroy = false
@@ -331,7 +338,7 @@ resource "aws_s3_bucket" "ai_artifact_storage" {
   }
 }
 
-# Erzwingt die serverseitige Verschlüsselung (KMS) für alle Daten
+// # Erzwingt die serverseitige Verschlüsselung (KMS) für alle Daten
 resource "aws_s3_bucket_server_side_encryption_configuration" "crypto_enforcement" {
   bucket = aws_s3_bucket.ai_artifact_storage.id
 
@@ -342,7 +349,7 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "crypto_enforcemen
   }
 }
 
-# Blockiert jeglichen öffentlichen Zugriff (Anti-Data-Leak)
+// # Blockiert jeglichen öffentlichen Zugriff (Anti-Data-Leak)
 resource "aws_s3_bucket_public_access_block" "private_by_default" {
   bucket = aws_s3_bucket.ai_artifact_storage.id
 
@@ -352,7 +359,7 @@ resource "aws_s3_bucket_public_access_block" "private_by_default" {
   restrict_public_buckets = true
 }
 
-# 2. Striktes IAM-Rollenprofil (Principle of Least Privilege) für den Auth-Daemon
+// # 2. Striktes IAM-Rollenprofil (Principle of Least Privilege) für den Auth-Daemon
 resource "aws_iam_role" "pipeline_execution_role" {
   name = "StudioPUPSI-Pipeline-Execution-Role"
 
@@ -370,7 +377,7 @@ resource "aws_iam_role" "pipeline_execution_role" {
   })
 }
 
-# Maßgeschneiderte IAM-Policy: Nur Lese- und Schreibrechte, kein Löschen erlaubt
+// # Maßgeschneiderte IAM-Policy: Nur Lese- und Schreibrechte, kein Löschen erlaubt
 resource "aws_iam_policy" "storage_access_policy" {
   name        = "StudioPUPSI-Storage-Access-Policy"
   description = "Allows secure, deterministic read/write access to AI artifacts without deletion privileges."
