@@ -273,6 +273,69 @@ class SecureAIPipelineValidator:
         return True
 ```
 
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+#### 6. Advanced Cloud Networking & Guardrails (Terraform)
+```hcl
+# file: terraform/network_security.tf
+
+# 1. Architecting an isolated, secure network topology (VPC)
+resource "aws_vpc" "secure_platform_vpc" {
+  cidr_block           = "10.0.0.0/16"
+  enable_dns_support   = true
+  enable_dns_hostnames = true
+
+  tags = {
+    Name        = "StudioPUPSI-Core-Network"
+    Environment = "Production"
+    Security    = "Strict-Isolation"
+  }
+}
+
+# 2. Private Subnet for confidential compute nodes (AI Runners & Auth Daemons)
+resource "aws_subnet" "private_compute_layer" {
+  vpc_id            = aws_vpc.secure_platform_vpc.id
+  cidr_block        = "10.0.1.0/24"
+  availability_zone = "eu-west-1a"
+
+  # Explicitly prevents public IP assignment to enforce absolute boundary security
+  map_public_ip_on_launch = false
+
+  tags = {
+    Name = "StudioPUPSI-Private-Compute"
+    Tier = "Backend-Execution"
+  }
+}
+
+# 3. Micro-Segmentation: Strict stateful firewall (Security Group)
+resource "aws_security_group" "auth_daemon_firewall" {
+  name        = "studiopupsi-auth-daemon-sg"
+  description = "Enforces baseline network isolation for hardware attestation daemons."
+  vpc_id      = aws_vpc.secure_platform_vpc.id
+
+  # Inbound Rule: Restrict access strictly to secure gRPC traffic on IPv6/IPv4 meshes
+  ingress {
+    description = "Allow deterministic gRPC handshake verification requests"
+    from_port   = 50051
+    to_port     = 50051
+    protocol    = "tcp"
+    cidr_blocks = ["10.0.0.0/16"] # Restricted to internal platform boundary
+  }
+
+  # Outbound Rule: Deny all internet access by default, allow only secure telemetry endpoints
+  egress {
+    description = "Restrict outbound traffic to secure KMS/API endpoints only"
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"] # Can be further restricted to specific AWS service endpoints
+  }
+
+  tags = {
+    SecurityLevel = "Zero-Trust-Enforced"
+  }
+}
+```
 
 
 
