@@ -24,6 +24,26 @@ It is designed for mission-critical enterprise infrastructures, secure edge comp
 *   **DevOps & Security:** `Docker` | `eBPF Kernel Telemetry` | `GitHub Actions (CI/CD)`
 
 ---
+graph TD
+    subgraph S/4HANA Enterprise Core
+        S4[S/4HANA ERP System] -->|RFC / OData Traffic| SCC[SAP Cloud Connector]
+    end
+
+    subgraph AWS Cloud Integration Perimeter
+        SCC -->|Secure Tunnel via Port 443| SG[aws_security_group: pupsi-sap-bridge-sg]
+        SG --> VPC[aws_vpc: pupsi-identity-perimeter]
+    end
+
+    subgraph SAP BTP Platform Layer
+        VPC -->|Principal Propagation| BTP[SAP BTP Subaccount]
+        BTP --> KYMA[Managed Kubernetes: Kyma Runtime]
+    end
+
+    subgraph Deterministic Compliance
+        KYMA -->|Clean Core Execution| DEST[Deterministic SHA-256 App Validation]
+    end
+    
+---
 
 ### **🛡️ Verified Credentials & Certifications**
 My architectural designs, security frameworks, and engineering skills are backed by industry-standard, globally verifiable digital credentials.
