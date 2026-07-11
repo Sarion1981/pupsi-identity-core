@@ -1,4 +1,4 @@
-name: "🔒 Studio PUPSI: IaC Quality & Security Scan"
+name: "🔒 Studio PUPSI: DevSecOps Quality & Security Scan"
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
 
 jobs:
   terraform-validate:
-    name: "Validate & Lint Infrastructure"
+    name: "1. Validate & Lint Infrastructure"
     runs-on: ubuntu-latest
 
     steps:
@@ -29,3 +29,19 @@ jobs:
         terraform init -backend=false
         terraform validate
 
+  security-scan:
+    name: "2. DevSecOps Vulnerability Scan"
+    needs: terraform-validate  # Läuft erst, wenn die Validierung fehlerfrei war
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Source Code
+      uses: actions/checkout@v4
+
+    - name: Run Trivy Vulnerability Scanner
+      uses: aquasecurity/trivy-action@v0.35.0   # Sichere, geprüfte Release-Version verwenden
+      with:
+        scan-type: 'fs'                        # Scannt das gesamte Dateisystem (Code & Configs)
+        scanners: 'vuln,secret,config'         # Prüft auf Schwachstellen, Passwörter und Fehlkonfigurationen
+        severity: 'CRITICAL,HIGH'              # Meldet nur kritische und schwere Alarme
+        hide-progress: true
