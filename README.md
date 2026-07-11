@@ -95,6 +95,35 @@ This module serves as the foundational security layer for **Project PUPSI**, ens
 **Focus:** IAM, Cloud Security Architecture, Automation.
 
 
+## 🏗️ System Architecture & Zero-Trust Perimeter
+
+```mermaid
+graph TD
+    subgraph Hardware Layer
+        A[Go Identity Anchor] -->|Hardware Telemetry Hashing| B(Unique Identifier Binding)
+    end
+
+    subgraph AWS Cloud Perimeter Isolation - Strict Zero-Trust
+        B -->|TLS Telemetry Inbound via Port 443| C[aws_security_group: pupsi-secure-anchor-sg]
+        C --> D[aws_vpc: pupsi-identity-perimeter]
+    end
+
+    subgraph Deterministic Verification Engine
+        D -->|Mathematical Instance Verification| E[Rust Deterministic Validator]
+        E -->|Eliminate Heuristic Gray Areas| F{Is Instance Trusted?}
+    end
+
+    subgraph AI Pipeline Guardrails
+        F -->|Yes: SHA-256 Artifact Validation| G[Python Pipeline Validator]
+        G -->|Block Supply-Chain Tampering| H[Immutable Compliance Success]
+        F -->|No: Log Security Event| I[CRITICAL SECURITY BREACH]
+    end
+
+    style C fill:#f9f,stroke:#333,stroke-width:2px
+    style E fill:#bbf,stroke:#333,stroke-width:2px
+    style G fill:#bfb,stroke:#333,stroke-width:2px
+    style I fill:#fbb,stroke:#333,stroke-width:2px
+```
 
 
 ------------------------------------------------------------------------------------------------------------------
