@@ -1,1 +1,31 @@
+name: "🔒 Studio PUPSI: IaC Quality & Security Scan"
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  terraform-validate:
+    name: "Validate & Lint Infrastructure"
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Source Code
+      uses: actions/checkout@v4
+
+    - name: Setup Terraform Environment
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: 1.7.0
+
+    - name: Check Code Formatting
+      run: terraform fmt -check -recursive iac/
+
+    - name: Validate Terraform Syntax
+      run: |
+        cd iac/
+        terraform init -backend=false
+        terraform validate
 
