@@ -1,1 +1,92 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: secure-enterprise-service
+  namespace: production
+  labels:
+    app.kubernetes.io/name: enterprise-api
+    app.kubernetes.io/part-of: platform-core
+    tier: backend
+spec:
+  replicas: 3 # Hochverfügbarkeit als Standard
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 0 # Zero-Downtime-Rollouts garantieren
+  selector:
+    matchLabels:
+      app: enterprise-api
+  template:
+    metadata:
+      labels:
+        app: enterprise-api
+    spec:
+      # Security Guardrail 1: Keine Root-Rechte für den Container
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: api-gateway
+        image: ://microsoft.com # Sicheres Enterprise-Base-Image
+        imagePullPolicy: IfNotPresent
+        
+        # Security Guardrail 2: Read-Only Dateisystem, Privilegien-Eskalation verhindern
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+
+        # Cluster-Governance: Exakte Ressourcen-Limits gegen "Noisy Neighbor"-Effekte
+        resources:
+          limits:
+            cpu: "1"
+            memory: 1Gi
+          requests:
+            cpu: "250m"
+            memory: 512Mi
+
+        # Stabilitäts-Checks: Professionelles Lifecycle-Management
+        ports:
+        - containerPort: 8080
+          name: http
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 10
+
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: enterprise-api-hpa
+  namespace: production
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: secure-enterprise-service
+  minReplicas: 3
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 75
 
