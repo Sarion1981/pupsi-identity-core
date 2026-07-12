@@ -1,57 +1,44 @@
 # ==============================================================================
-# STUDIO PUPSI: ENTERPRISE IDENTITY INTEGRATION (AZURE WORKLOAD IDENTITY)
-# Target Architecture: Schlüssellose Authentifizierung für den Rust-Validator
+# STUDIO PUPSI: WORKLOAD IDENTITY FEDERATION
 # ==============================================================================
 
-terraform {
-  required_version = ">= 1.5.0"
-  required_providers {
-    azurerm = {
-      source  = "hashicorp/azurerm"
-      version = "~> 3.0"
-    }
-    azuread = {
-      source  = "hashicorp/azuread"
-      version = "~> 2.0"
-    }
-  }
-}
-
-# 1. Lokale Variablen für das Kubernetes Namespace- und ServiceAccount-Mapping
+# Lokale Variablen für das Kubernetes Namespace- und ServiceAccount-Mapping
 locals {
   k8s_namespace       = "pupsi-core-infrastructure"
   k8s_service_account = "pupsi-validator-sa"
 }
 
-# 2. Datenquelle des bestehenden AKS Clusters abfragen (für den OIDC-Issuer-URL)
+# Datenquelle für das bestehende AKS Cluster abfragen (OIDC-Issuer-URL)
 data "azurerm_kubernetes_cluster" "aks" {
   name                = "pupsi-identity-perimeter-cluster"
   resource_group_name = "pupsi-security-rg"
 }
 
-# 3. Erstellung der Managed Identity für den K8s-Pod (Keine Passwörter/Secrets!)
+# Datenquelle für den bestehenden Key Vault abfragen (Eliminiert harte String-IDs!)
+data "azurerm_key_vault" "pupsi_vault" {
+  name                = "pupsi-vault"
+  resource_group_name = "pupsi-security-rg"
+}
+
+# Erstellung der Managed Identity für den K8s-Pod
 resource "azurerm_user_assigned_identity" "validator_identity" {
   name                = "id-pupsi-rust-validator-prod"
   resource_group_name = "pupsi-security-rg"
   location            = "westeurope"
 }
 
-# 4. Der Brückenschlag (Federated Identity Credential): Vertrauensstellung einrichten
+# Der Brückenschlag: Vertrauensstellung einrichten
 resource "azurerm_federated_identity_credential" "k8s_bridge" {
   name                = "fed-pupsi-k8s-validator-trust"
   resource_group_name = "pupsi-security-rg"
   audience            = ["api://AzureADTokenExchange"]
-  
-  # Der OIDC Provider des AKS Clusters authentifiziert den K8s Service Account
   issuer              = data.azurerm_kubernetes_cluster.aks.oidc_issuer_url
-  
-  # Harte Einschränkung: Nur DIESER spezifische K8s-Pod im Namespace darf die Identität annehmen
   subject             = "system:serviceaccount:${local.k8s_namespace}:${local.k8s_service_account}"
 }
 
-# 5. RBAC: Der Identität Zugriff auf den Key Vault gewähren (Beispielhaft für DevSecOps)
+# RBAC: Zugriff auf den Key Vault über die dynamische Datenquellen-ID verknüpfen
 resource "azurerm_key_vault_access_policy" "kv_policy" {
-#  key_vault_id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/pupsi-security-rg/providers/Microsoft.KeyVault/vaults/pupsi-vault"
+  key_vault_id = data.azurerm_key_vault.pupsi_vault.id
   tenant_id    = azurerm_user_assigned_identity.validator_identity.tenant_id
   object_id    = azurerm_user_assigned_identity.validator_identity.principal_id
 
@@ -61,11 +48,8 @@ resource "azurerm_key_vault_access_policy" "kv_policy" {
   ]
 }
 
-# ==============================================================================
-# OUTPUTS FÜR DAS KUBERNETES MANIFEST
-# ==============================================================================
+# Output für die K8s-ServiceAccount-Annotation
 output "workload_client_id" {
-  description = "Diese Client-ID muss als Annotation im K8s ServiceAccount hinterlegt werden!"
+  description = "Client-ID für die K8s-ServiceAccount-Annotation"
   value       = azurerm_user_assigned_identity.validator_identity.client_id
 }
-
