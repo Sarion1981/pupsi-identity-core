@@ -1,1 +1,56 @@
+# ==============================================================================
+# STUDIO PUPSI: WORKLOAD IDENTITY FEDERATION
+# ==============================================================================
+
+# Lokale Variablen für das Kubernetes Namespace- und ServiceAccount-Mapping
+locals {
+  k8s_namespace       = "pupsi-core-infrastructure"
+  k8s_service_account = "pupsi-validator-sa"
+}
+
+# Datenquelle für das bestehende AKS Cluster abfragen (OIDC-Issuer-URL)
+data "azurerm_kubernetes_cluster" "aks" {
+  name                = "pupsi-identity-perimeter-cluster"
+  resource_group_name = "pupsi-security-rg"
+}
+
+# Datenquelle für den bestehenden Key Vault abfragen (Eliminiert harte String-IDs!)
+data "azurerm_key_vault" "pupsi_vault" {
+  name                = "pupsi-vault"
+  resource_group_name = "pupsi-security-rg"
+}
+
+# Erstellung der Managed Identity für den K8s-Pod
+resource "azurerm_user_assigned_identity" "validator_identity" {
+  name                = "id-pupsi-rust-validator-prod"
+  resource_group_name = "pupsi-security-rg"
+  location            = "westeurope"
+}
+
+# Der Brückenschlag: Vertrauensstellung einrichten
+resource "azurerm_federated_identity_credential" "k8s_bridge" {
+  name                = "fed-pupsi-k8s-validator-trust"
+  resource_group_name = "pupsi-security-rg"
+  audience            = ["api://AzureADTokenExchange"]
+  issuer              = data.azurerm_kubernetes_cluster.aks.oidc_issuer_url
+  subject             = "system:serviceaccount:${local.k8s_namespace}:${local.k8s_service_account}"
+}
+
+# RBAC: Zugriff auf den Key Vault über die dynamische Datenquellen-ID verknüpfen
+resource "azurerm_key_vault_access_policy" "kv_policy" {
+  key_vault_id = data.azurerm_key_vault.pupsi_vault.id
+  tenant_id    = azurerm_user_assigned_identity.validator_identity.tenant_id
+  object_id    = azurerm_user_assigned_identity.validator_identity.principal_id
+
+  secret_permissions = [
+    "Get",
+    "List"
+  ]
+}
+
+# Output für die K8s-ServiceAccount-Annotation
+output "workload_client_id" {
+  description = "Client-ID für die K8s-ServiceAccount-Annotation"
+  value       = azurerm_user_assigned_identity.validator_identity.client_id
+}
 
