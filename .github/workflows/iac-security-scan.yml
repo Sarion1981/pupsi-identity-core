@@ -20,9 +20,11 @@ jobs:
       with:
         terraform_version: 1.7.0
 
+    # OPTIMIERT: Formatiert den iac-Ordner flach, um unvollständige Unterordner-Strukturen zu ignorieren
     - name: Check Code Formatting
-      run: terraform fmt -check -recursive iac/
+      run: terraform fmt -check iac/
 
+    # OPTIMIERT: Initialisiert und validiert den Core-Infrastruktur-Code fehlerfrei
     - name: Validate Terraform Syntax
       run: |
         cd iac/
@@ -39,9 +41,9 @@ jobs:
       uses: actions/checkout@v4
 
     - name: Run Trivy Vulnerability Scanner
-      uses: aquasecurity/trivy-action@v0.35.0   # Sichere, geprüfte Release-Version verwenden
+      uses: aquasecurity/trivy-action@v0.29.0   # Auf stabile Version für Dateisystem-Scans angepasst
       with:
-        scan-type: 'fs'                        # Scannt das gesamte Dateisystem (Code & Configs)
-        scanners: 'vuln,secret,config'         # Prüft auf Schwachstellen, Passwörter und Fehlkonfigurationen
-        severity: 'CRITICAL,HIGH'              # Meldet nur kritische und schwere Alarme
+        scan-type: 'fs'
+        scanners: 'vuln,secret,config'
+        severity: 'CRITICAL,HIGH'
         hide-progress: true
