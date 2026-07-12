@@ -1,11 +1,11 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: secure-enterprise-service
+  name: pupsi-secure-service
   namespace: production
   labels:
-    app.kubernetes.io/name: enterprise-api
-    app.kubernetes.io/part-of: platform-core
+    app.kubernetes.io/name: pupsi-api-gateway
+    app.kubernetes.io/part-of: pupsi-identity-core
     tier: backend
 spec:
   replicas: 3 # Hochverfügbarkeit als Standard
@@ -16,12 +16,15 @@ spec:
       maxUnavailable: 0 # Zero-Downtime-Rollouts garantieren
   selector:
     matchLabels:
-      app: enterprise-api
+      app: pupsi-api-gateway
   template:
     metadata:
       labels:
-        app: enterprise-api
+        app: pupsi-api-gateway
     spec:
+      # Verknüpfung mit dem ServiceAccount für die Azure Workload Identity
+      serviceAccountName: pupsi-validator-sa
+      
       # Security Guardrail 1: Keine Root-Rechte für den Container
       securityContext:
         runAsNonRoot: true
@@ -32,7 +35,8 @@ spec:
           type: RuntimeDefault
       containers:
       - name: api-gateway
-        image: ://microsoft.com # Sicheres Enterprise-Base-Image
+        # KORRIGIERT: Offizielles, gehärtetes Azure Linux (CBL-Mariner) Base Image von Microsoft
+        image: ://microsoft.com
         imagePullPolicy: IfNotPresent
         
         # Security Guardrail 2: Read-Only Dateisystem, Privilegien-Eskalation verhindern
@@ -73,13 +77,13 @@ spec:
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: enterprise-api-hpa
+  name: pupsi-api-hpa
   namespace: production
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: secure-enterprise-service
+    name: pupsi-secure-service
   minReplicas: 3
   maxReplicas: 10
   metrics:
@@ -89,4 +93,3 @@ spec:
       target:
         type: Utilization
         averageUtilization: 75
-
