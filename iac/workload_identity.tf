@@ -51,7 +51,7 @@ resource "azurerm_federated_identity_credential" "k8s_bridge" {
 
 # 5. RBAC: Der Identität Zugriff auf den Key Vault gewähren (Beispielhaft für DevSecOps)
 resource "azurerm_key_vault_access_policy" "kv_policy" {
-  key_vault_id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/pupsi-security-rg/providers/Microsoft.KeyVault/vaults/pupsi-vault"
+#  key_vault_id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/pupsi-security-rg/providers/Microsoft.KeyVault/vaults/pupsi-vault"
   tenant_id    = azurerm_user_assigned_identity.validator_identity.tenant_id
   object_id    = azurerm_user_assigned_identity.validator_identity.principal_id
 
